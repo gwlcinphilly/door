@@ -8,6 +8,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import HTTPException, status, Depends, Request
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -150,8 +151,7 @@ def require_auth(request: Request):
     
     user = get_session_user(request)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
+        # For HTML requests, we need to handle redirect in the route handler
+        # Return None to indicate authentication failed
+        return None
     return user

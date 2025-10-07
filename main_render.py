@@ -58,6 +58,9 @@ app.include_router(settings.router, prefix="/settings", tags=["settings"])
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, user: dict = Depends(require_auth)):
     """Home page with dashboard overview"""
+    if user is None:
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user

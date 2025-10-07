@@ -19,6 +19,10 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/", response_class=HTMLResponse)
 async def stocks_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Stocks management page"""
+    if user is None:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
     stocks = db.query(models.Stock).all()
     return templates.TemplateResponse("stocks.html", {
         "request": request,

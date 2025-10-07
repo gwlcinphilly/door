@@ -29,6 +29,10 @@ async def information_page(
     check_tag: Optional[bool] = False
 ):
     """Information management page with filtering"""
+    if user is None:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
     from datetime import datetime, timedelta
     from sqlalchemy import and_, or_
     

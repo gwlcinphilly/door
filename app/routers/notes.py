@@ -19,6 +19,10 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/", response_class=HTMLResponse)
 async def notes_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Notes management page"""
+    if user is None:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
     notes = db.query(models.Notes).all()
     return templates.TemplateResponse("notes.html", {
         "request": request,

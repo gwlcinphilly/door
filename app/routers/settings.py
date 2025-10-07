@@ -31,6 +31,10 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/", response_class=HTMLResponse)
 async def settings_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Settings management page"""
+    if user is None:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
     # Get all categories and tags for management
     categories = db.query(models.NotesTypes).all()
     tags = db.query(models.NotesTag).all()

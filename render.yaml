@@ -20,7 +20,7 @@ services:
       - key: NEON_PASSWORD
         value: npg_EntrThk1V8KI
       - key: SECRET_KEY
-        value: your-secret-key-change-this-in-production
+        value: QkUqe3w0afBLrDIza80p-49-aNsQyOcEQDEw9hCLU4g
       - key: ADMIN_PASSWORD
         value: admin123
     healthCheckPath: /health

@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 # Import routers
-from app.routers import stocks, information, notes, api
+from app.routers import stocks, information, notes, api, settings
 from app.database import engine, get_db
 from app import models
 
@@ -47,6 +47,7 @@ app.include_router(api.router, prefix="/api", tags=["api"])
 app.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 app.include_router(information.router, prefix="/information", tags=["information"])
 app.include_router(notes.router, prefix="/notes", tags=["notes"])
+app.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: door-fastapi-app
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements_render.txt
+    startCommand: python main_render.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: USE_NEON
+        value: true
+    healthCheckPath: /health
+    autoDeploy: true

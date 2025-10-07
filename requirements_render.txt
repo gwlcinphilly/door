@@ -31,6 +31,3 @@ gunicorn>=21.2.0
 
 # Static files
 aiofiles>=23.2.1
-
-# CORS handling
-python-cors>=1.7.0

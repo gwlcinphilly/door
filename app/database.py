@@ -12,10 +12,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database configuration
-USE_NEON = os.getenv('USE_NEON', 'False').lower() == 'true'
+# Auto-detect Render environment or use explicit setting
+USE_NEON = os.getenv('USE_NEON', 'False').lower() == 'true' or os.getenv('RENDER') is not None
 
 def get_database_url():
     """Get database URL based on environment configuration"""
+    # Debug: Print environment variables (remove in production)
+    print(f"DEBUG: USE_NEON = {USE_NEON}")
+    print(f"DEBUG: USE_NEON env var = {os.getenv('USE_NEON')}")
+    print(f"DEBUG: RENDER env var = {os.getenv('RENDER')}")
+    
     if USE_NEON:
         # Neon Database Configuration - ALL VALUES MUST BE SET IN .env FILE
         neon_user = os.getenv('NEON_USER')
@@ -25,7 +31,12 @@ def get_database_url():
         neon_database = os.getenv('NEON_DATABASE_NAME')
 
         if not all([neon_user, neon_password, neon_host, neon_database]):
-            raise ValueError("Missing required Neon database configuration. Please set NEON_USER, NEON_PASSWORD, NEON_HOST, and NEON_DATABASE_NAME in .env file")
+            missing = []
+            if not neon_user: missing.append('NEON_USER')
+            if not neon_password: missing.append('NEON_PASSWORD')
+            if not neon_host: missing.append('NEON_HOST')
+            if not neon_database: missing.append('NEON_DATABASE_NAME')
+            raise ValueError(f"Missing required Neon database configuration: {', '.join(missing)}. Please set these environment variables in Render dashboard.")
 
         return f"postgresql://{neon_user}:{neon_password}@{neon_host}:{neon_port}/{neon_database}"
     else:

@@ -9,5 +9,15 @@ services:
         value: 3.11.0
       - key: USE_NEON
         value: true
+      - key: NEON_HOST
+        value: ep-icy-violet-adv1dwix.c-2.us-east-1.aws.neon.tech
+      - key: NEON_PORT
+        value: 5432
+      - key: NEON_DATABASE_NAME
+        value: neondb
+      - key: NEON_USER
+        value: neondb_owner
+      - key: NEON_PASSWORD
+        value: npg_EntrThk1V8KI
     healthCheckPath: /health
     autoDeploy: true

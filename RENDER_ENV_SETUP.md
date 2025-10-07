@@ -59,19 +59,17 @@ If you prefer to use `render.yaml`, replace the placeholder values with real val
 - Use weak passwords
 - Store credentials in code files
 
-## 🔑 Default Credentials
+## 🔑 Authentication Credentials
 
-```
-Username: admin
-Password: admin123 (or your custom ADMIN_PASSWORD)
-```
+**Important**: Set a strong `ADMIN_PASSWORD` environment variable to secure your deployment. The default password should be changed immediately after deployment.
 
 ## 🚀 Deployment Steps
 
 1. **Set environment variables** in Render dashboard
-2. **Deploy your application**
-3. **Test login** with admin credentials
-4. **Change default password** if needed
+2. **Set a strong ADMIN_PASSWORD** (required for security)
+3. **Deploy your application**
+4. **Test login** with your credentials
+5. **Verify security** - ensure authentication is working
 
 ## 📞 Support
 

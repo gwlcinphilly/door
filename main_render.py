@@ -8,14 +8,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 import os
 from pathlib import Path
 
 # Import routers
-from app.routers import stocks, information, notes, api, settings
+from app.routers import stocks, information, notes, api, settings, auth
 from app.database import engine, get_db
 from app import models
+from app.auth import is_production_environment, require_auth
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -36,6 +38,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add session middleware for authentication
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "your-secret-key-here"))
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -43,6 +48,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Include routers
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(api.router, prefix="/api", tags=["api"])
 app.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 app.include_router(information.router, prefix="/information", tags=["information"])
@@ -50,9 +56,12 @@ app.include_router(notes.router, prefix="/notes", tags=["notes"])
 app.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request, user: dict = Depends(require_auth)):
     """Home page with dashboard overview"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "user": user
+    })
 
 @app.get("/health")
 async def health_check():

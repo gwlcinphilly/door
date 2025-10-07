@@ -12,6 +12,7 @@ from .. import models
 from ..models import information_tags
 from ..schemas import InformationResponse, InformationCreate, InformationUpdate, CommentResponse, CommentCreate
 from ..source_detection import detect_source
+from ..auth import require_auth
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -21,6 +22,7 @@ templates = Jinja2Templates(directory="templates")
 async def information_page(
     request: Request, 
     db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
     source: Optional[str] = None,
     days: Optional[str] = "1",
     no_tag: Optional[bool] = False,

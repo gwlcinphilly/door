@@ -19,5 +19,9 @@ services:
         value: neondb_owner
       - key: NEON_PASSWORD
         value: npg_EntrThk1V8KI
+      - key: SECRET_KEY
+        value: your-secret-key-change-this-in-production
+      - key: ADMIN_PASSWORD
+        value: admin123
     healthCheckPath: /health
     autoDeploy: true

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from ..database import get_db
 from .. import models
 from ..schemas import NotesTypesResponse, NotesTagResponse
+from ..auth import require_auth
 
 # Request schemas for API endpoints
 class CategoryCreate(BaseModel):
@@ -28,7 +29,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Settings page
 @router.get("/", response_class=HTMLResponse)
-async def settings_page(request: Request, db: Session = Depends(get_db)):
+async def settings_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Settings management page"""
     # Get all categories and tags for management
     categories = db.query(models.NotesTypes).all()

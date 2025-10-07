@@ -10,18 +10,20 @@ from typing import List, Optional
 from ..database import get_db
 from .. import models
 from ..schemas import StockResponse, StockCreate, StockUpdate, StockTransResponse, StockTransCreate
+from ..auth import require_auth
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # Stock CRUD operations
 @router.get("/", response_class=HTMLResponse)
-async def stocks_page(request: Request, db: Session = Depends(get_db)):
+async def stocks_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Stocks management page"""
     stocks = db.query(models.Stock).all()
     return templates.TemplateResponse("stocks.html", {
         "request": request,
-        "stocks": stocks
+        "stocks": stocks,
+        "user": user
     })
 
 @router.get("/api/stocks", response_model=List[StockResponse])

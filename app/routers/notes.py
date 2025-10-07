@@ -10,13 +10,14 @@ from typing import List, Optional
 from ..database import get_db
 from .. import models
 from ..schemas import NotesResponse, NotesCreate, NotesUpdate, UpdateResponse, UpdateCreate
+from ..auth import require_auth
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # Notes CRUD operations
 @router.get("/", response_class=HTMLResponse)
-async def notes_page(request: Request, db: Session = Depends(get_db)):
+async def notes_page(request: Request, db: Session = Depends(get_db), user: dict = Depends(require_auth)):
     """Notes management page"""
     notes = db.query(models.Notes).all()
     return templates.TemplateResponse("notes.html", {

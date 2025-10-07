@@ -31,6 +31,9 @@ ENV/
 .env.local
 .env.*.local
 
+# Local development files
+requirements_local.txt
+
 # IDEs
 .vscode/
 .idea/

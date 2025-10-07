@@ -10,6 +10,18 @@
     </div>
 </div>
 
+<!-- Local Development Notice -->
+{% if not is_render %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> Local Development Environment</h5>
+            <p class="mb-0">You are currently running in local development mode. This page shows basic environment information, but most production features are disabled for development purposes.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row mt-4">
     <!-- Environment Status -->
     <div class="col-md-6 mb-4">

@@ -1,0 +1,27 @@
+# FastAPI and core dependencies - compatible with Python 3.13
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+
+# Templates
+jinja2
+
+# Environment and configuration
+python-dotenv
+pydantic
+pydantic-settings
+
+# HTTP client
+httpx
+requests
+
+# Date handling
+python-dateutil
+
+# For web scraping
+beautifulsoup4

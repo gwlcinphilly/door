@@ -15,6 +15,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from .database import get_db, USE_NEON
 from . import models
+from .config import is_render
 
 # Security configuration
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
@@ -29,7 +30,7 @@ security = HTTPBearer()
 
 def is_production_environment() -> bool:
     """Check if running in production (Render) environment"""
-    return USE_NEON or os.getenv('RENDER') is not None
+    return is_render()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""

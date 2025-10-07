@@ -145,6 +145,38 @@
                         </div>
                         <div class="form-text">Automatically refresh data every 30 seconds.</div>
                     </div>
+                    
+                    <!-- Environment Information -->
+                    <div class="mb-3">
+                        <label class="form-label">Environment Status</label>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Current Environment:</strong>
+                                        <span class="badge {% if user and user.is_authenticated %}bg-success{% else %}bg-info{% endif %} ms-2" id="env-badge">
+                                            {% if user and user.is_authenticated %}Production (Render){% else %}Local Development{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Authentication:</strong>
+                                        <span class="badge {% if user and user.is_authenticated %}bg-success{% else %}bg-warning{% endif %} ms-2">
+                                            {% if user and user.is_authenticated %}Enabled{% else %}Disabled{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> 
+                                            Click <a href="/environment/" class="text-decoration-none">Environment Info</a> for detailed system information.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary">Save Settings</button>
                 </form>
             </div>

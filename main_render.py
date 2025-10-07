@@ -14,10 +14,11 @@ import os
 from pathlib import Path
 
 # Import routers
-from app.routers import stocks, information, notes, api, settings, auth
+from app.routers import stocks, information, notes, api, settings, auth, environment
 from app.database import engine, get_db
 from app import models
 from app.auth import is_production_environment, require_auth
+from app.config import get_environment_info
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -54,6 +55,7 @@ app.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 app.include_router(information.router, prefix="/information", tags=["information"])
 app.include_router(notes.router, prefix="/notes", tags=["notes"])
 app.include_router(settings.router, prefix="/settings", tags=["settings"])
+app.include_router(environment.router, prefix="/environment", tags=["environment"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, user: dict = Depends(require_auth)):

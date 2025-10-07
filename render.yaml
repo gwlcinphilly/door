@@ -2,7 +2,7 @@ services:
   - type: web
     name: door-fastapi-app
     env: python
-    buildCommand: pip install --upgrade pip && pip install -r requirements_render_minimal.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main_render.py
     envVars:
       - key: PYTHON_VERSION

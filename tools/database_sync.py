@@ -28,6 +28,12 @@ import json
 from typing import Dict, List, Optional, Tuple
 import time
 import re
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from parent directory's .env file
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(env_path)
 
 # Configure logging
 logging.basicConfig(
@@ -55,13 +61,21 @@ class DatabaseConfig:
     
     @staticmethod
     def get_neon_config() -> Dict[str, str]:
-        """Get Neon database configuration"""
+        """Get Neon database configuration from environment variables"""
+        neon_host = os.getenv('NEON_HOST')
+        neon_user = os.getenv('NEON_USER')
+        neon_password = os.getenv('NEON_PASSWORD')
+        neon_database = os.getenv('NEON_DATABASE_NAME')
+
+        if not all([neon_host, neon_user, neon_password, neon_database]):
+            raise ValueError("Missing required Neon configuration. Please set NEON_HOST, NEON_USER, NEON_PASSWORD, and NEON_DATABASE_NAME in .env file")
+
         return {
-            'host': os.getenv('NEON_HOST', 'ep-icy-violet-adv1dwix.c-2.us-east-1.aws.neon.tech'),
+            'host': neon_host,
             'port': os.getenv('NEON_PORT', '5432'),
-            'database': os.getenv('NEON_DATABASE_NAME', 'neondb'),
-            'user': os.getenv('NEON_USER', 'neondb_owner'),
-            'password': os.getenv('NEON_PASSWORD', 'npg_EntrThk1V8KI'),
+            'database': neon_database,
+            'user': neon_user,
+            'password': neon_password,
             'sslmode': 'require'
         }
 

@@ -1,0 +1,28 @@
+# Minimal requirements for Render deployment
+# Only essential packages to avoid metadata generation errors
+
+# Core FastAPI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database (essential)
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Templates
+jinja2==3.1.2
+
+# Environment
+python-dotenv==1.0.0
+
+# Data validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Basic HTTP requests
+requests==2.31.0
+
+# Production server
+gunicorn==21.2.0

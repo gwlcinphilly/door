@@ -33,6 +33,16 @@ ENV/
 
 # Local development files
 requirements_local.txt
+main.py
+requirements_core.txt
+requirements_minimal.txt
+start.sh
+fix_schemas.py
+
+# Log files
+database_sync.log
+*.log
+logs/
 
 # IDEs
 .vscode/
@@ -46,10 +56,6 @@ requirements_local.txt
 *.db
 *.sqlite
 *.sqlite3
-
-# Logs
-*.log
-logs/
 
 # Testing
 .pytest_cache/

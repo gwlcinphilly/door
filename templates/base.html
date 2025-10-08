@@ -35,7 +35,7 @@
                             <i class="bi bi-house"></i> Home
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" id="stocks-nav-item">
                         <a class="nav-link" href="/stocks/">
                             <i class="bi bi-graph-up"></i> Stocks
                         </a>
@@ -117,13 +117,23 @@
             .then(response => response.json())
             .then(data => {
                 const envNavItem = document.getElementById('env-nav-item');
-                if (envNavItem && data.environment === 'render') {
-                    envNavItem.style.display = 'block';
+                const stocksNavItem = document.getElementById('stocks-nav-item');
+                
+                if (data.environment === 'render') {
+                    // Show environment tab on Render
+                    if (envNavItem) {
+                        envNavItem.style.display = 'block';
+                    }
+                    // Hide stocks tab on Render
+                    if (stocksNavItem) {
+                        stocksNavItem.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
-                // If environment API fails, assume local development and hide
-                console.log('Environment detection failed, hiding environment nav');
+                // If environment API fails, assume local development
+                // Keep stocks visible, hide environment
+                console.log('Environment detection failed, assuming local development');
             });
     });
     </script>

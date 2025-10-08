@@ -4,6 +4,7 @@ This module provides comprehensive metadata extraction from various sources incl
 """
 from datetime import datetime, timezone
 from typing import Dict, Optional
+from .config import is_render
 from .source import (
     is_youtube_url,
     extract_youtube_metadata,
@@ -64,6 +65,14 @@ def detect_source(url: str) -> Dict:
                 final_url = youtube_url
                 result['url'] = final_url
                 print(f"Extracted YouTube URL: {url} -> {final_url}")
+        
+        # Check if running on Render - skip metadata extraction if so
+        if is_render():
+            print("Running on Render - skipping metadata extraction, saving URL only")
+            result['url'] = final_url
+            result['title'] = f"Entry from {final_url}"
+            result['content'] = f"URL saved from Render: {final_url}"
+            return result
         
         # STEP 2: Extract metadata based on the final URL
         # Check if URL contains Xiaohongshu link

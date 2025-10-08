@@ -16,6 +16,11 @@ A modern Python web application built with FastAPI for managing stocks, informat
    ```bash
    python main.py
    ```
+   
+   **Note:** When starting the local dev site, the database automatically syncs with Neon (production) using smart-sync mode:
+   - First pulls new records from Neon → Local (preserves production additions)
+   - Then pushes all records from Local → Neon (ensures complete sync)
+   - This happens before the server starts and only runs in local development mode
 
 4. **Access the application:**
    - Web interface: http://localhost:8000

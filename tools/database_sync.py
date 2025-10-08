@@ -7,14 +7,22 @@ This script synchronizes data between local PostgreSQL and remote Neon databases
 Supports bidirectional sync with configurable direction.
 
 Usage:
-    python database_sync.py                    # Default: local -> neon
+    python database_sync.py                         # Default: smart-sync (recommended)
+    python database_sync.py --direction smart-sync  # Smart bidirectional sync
     python database_sync.py --direction local-to-neon
     python database_sync.py --direction neon-to-local
     python database_sync.py --direction both
     python database_sync.py --help
 
+Smart Sync Mode (Recommended):
+    The smart-sync mode intelligently handles bidirectional synchronization:
+    1. First syncs NEW records from Neon → Local (preserves Neon-only additions)
+    2. Then syncs ALL records from Local → Neon (ensures Neon has complete data)
+    This approach ensures no data loss while treating Local as the source of truth.
+
 Author: AI Assistant
 Date: 2025-01-24
+Updated: 2025-10-08
 """
 
 import os
@@ -290,6 +298,53 @@ class DatabaseSyncer:
         
         return db_conn.execute_query(query)
     
+    def get_new_records(self, table_name: str, source_db: DatabaseConnection, target_db: DatabaseConnection) -> List[Dict]:
+        """Get records that exist in source but not in target (based on ID)"""
+        # Check if table has an 'id' column
+        structure = self.get_table_structure(table_name, source_db)
+        if not structure:
+            return []
+        
+        has_id_column = any(col['column_name'] == 'id' for col in structure)
+        
+        if not has_id_column:
+            # If no ID column, can't determine new records, return empty
+            return []
+        
+        # Check if table exists in both databases
+        if not self.table_exists(table_name, source_db) or not self.table_exists(table_name, target_db):
+            # If table doesn't exist in target, all source records are "new"
+            if self.table_exists(table_name, source_db):
+                return self.get_table_data(table_name, source_db)
+            return []
+        
+        # Get all IDs from target
+        target_ids_query = f"SELECT id FROM {table_name}"
+        target_ids_result = target_db.execute_query(target_ids_query)
+        target_ids = {row['id'] for row in target_ids_result}
+        
+        # Get all records from source
+        source_records = self.get_table_data(table_name, source_db)
+        
+        # Filter records that don't exist in target
+        new_records = [record for record in source_records if record['id'] not in target_ids]
+        
+        return new_records
+    
+    def get_existing_record_ids(self, table_name: str, db_conn: DatabaseConnection) -> set:
+        """Get set of all IDs from a table"""
+        structure = self.get_table_structure(table_name, db_conn)
+        if not structure:
+            return set()
+        
+        has_id_column = any(col['column_name'] == 'id' for col in structure)
+        if not has_id_column:
+            return set()
+        
+        query = f"SELECT id FROM {table_name}"
+        result = db_conn.execute_query(query)
+        return {row['id'] for row in result}
+    
     def create_table_if_not_exists(self, table_name: str, structure: List[Dict], target_db: DatabaseConnection) -> bool:
         """Create table if it doesn't exist"""
         # Check if table exists
@@ -460,6 +515,55 @@ class DatabaseSyncer:
             self.sync_stats['errors'] += 1
             return False
     
+    def sync_new_records_only(self, table_name: str, source_db: DatabaseConnection, target_db: DatabaseConnection) -> bool:
+        """Sync only new records (records in source but not in target) from source to target"""
+        logger.info(f"🔄 Syncing new records for table: {table_name}")
+        
+        try:
+            # Check if table exists in source
+            if not self.table_exists(table_name, source_db):
+                logger.warning(f"Table {table_name} does not exist in source database, skipping")
+                return True  # Not an error, just skip
+            
+            # Get table structure from source
+            structure = self.get_table_structure(table_name, source_db)
+            if not structure:
+                logger.warning(f"No structure found for table {table_name}")
+                self.sync_stats['errors'] += 1
+                return False
+            
+            # Create table in target if it doesn't exist
+            if not self.create_table_if_not_exists(table_name, structure, target_db):
+                self.sync_stats['errors'] += 1
+                return False
+            
+            # Get only new records
+            new_records = self.get_new_records(table_name, source_db, target_db)
+            
+            if not new_records:
+                logger.info(f"No new records to sync for {table_name}")
+                return True
+            
+            logger.info(f"Found {len(new_records)} new records in {table_name}")
+            
+            # Insert only new records into target
+            inserted_count, error_count = self.insert_data(table_name, new_records, target_db)
+            logger.info(f"✅ Inserted {inserted_count} new records into {table_name}")
+            
+            # Count errors and successful records
+            self.sync_stats['records_synced'] += inserted_count
+            self.sync_stats['errors'] += error_count
+            
+            if error_count > 0:
+                logger.warning(f"⚠️ {error_count} new records failed to insert into {table_name}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error syncing new records for table {table_name}: {e}")
+            self.sync_stats['errors'] += 1
+            return False
+    
     def sync_database(self, source_db: DatabaseConnection, target_db: DatabaseConnection, direction: str):
         """Sync entire database from source to target"""
         logger.info(f"🚀 Starting database sync: {direction}")
@@ -485,6 +589,38 @@ class DatabaseSyncer:
         logger.info(f"✅ Database sync completed: {direction}")
         return True
     
+    def sync_new_records_from_database(self, source_db: DatabaseConnection, target_db: DatabaseConnection, direction: str):
+        """Sync only new records from source to target database"""
+        logger.info(f"🚀 Starting new records sync: {direction}")
+        
+        # Get list of tables in dependency order
+        table_names = self.get_ordered_table_list(source_db)
+        
+        if not table_names:
+            logger.error("No tables found in source database")
+            return False
+        
+        logger.info(f"Found {len(table_names)} tables to check for new records:")
+        for i, table in enumerate(table_names, 1):
+            logger.info(f"  {i}. {table}")
+        
+        # Sync new records for each table in order
+        tables_with_new_records = 0
+        for table_name in table_names:
+            # Check if there are new records first
+            new_records = self.get_new_records(table_name, source_db, target_db)
+            if new_records:
+                tables_with_new_records += 1
+                if self.sync_new_records_only(table_name, source_db, target_db):
+                    # Don't increment tables_synced here, just log
+                    pass
+                else:
+                    logger.error(f"Failed to sync new records for table {table_name}")
+        
+        logger.info(f"✅ New records sync completed: {direction}")
+        logger.info(f"Tables with new records: {tables_with_new_records}")
+        return True
+    
     def run_sync(self):
         """Run the synchronization process"""
         self.sync_stats['start_time'] = datetime.now()
@@ -506,7 +642,25 @@ class DatabaseSyncer:
         try:
             success = True
             
-            if self.direction in ["local-to-neon", "both"]:
+            if self.direction == "smart-sync":
+                # Smart sync: First pull new records from Neon to Local, then push everything from Local to Neon
+                logger.info("\n🧠 SMART SYNC MODE")
+                logger.info("Step 1: Sync new records from Neon → Local")
+                logger.info("Step 2: Sync all records from Local → Neon")
+                logger.info("-" * 60)
+                
+                # Step 1: Sync only new records from Neon to Local
+                logger.info("\n📥 Step 1: Syncing NEW records Neon → Local")
+                if not self.sync_new_records_from_database(self.neon_db, self.local_db, "Neon → Local (new records only)"):
+                    success = False
+                    logger.warning("⚠️ Step 1 had issues, but continuing to Step 2...")
+                
+                # Step 2: Sync all records from Local to Neon (full sync)
+                logger.info("\n📤 Step 2: Syncing ALL records Local → Neon")
+                if not self.sync_database(self.local_db, self.neon_db, "Local → Neon (full sync)"):
+                    success = False
+                
+            elif self.direction in ["local-to-neon", "both"]:
                 logger.info("\n📤 Syncing Local → Neon")
                 if not self.sync_database(self.local_db, self.neon_db, "Local → Neon"):
                     success = False
@@ -546,18 +700,25 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python database_sync.py                           # Default: local → neon
+  python database_sync.py                           # Default: smart-sync (recommended)
+  python database_sync.py --direction smart-sync    # Smart bidirectional sync
   python database_sync.py --direction local-to-neon # Explicit: local → neon
   python database_sync.py --direction neon-to-local # neon → local
-  python database_sync.py --direction both          # Bidirectional sync
+  python database_sync.py --direction both          # Bidirectional sync (both directions)
+
+Smart Sync Mode (Recommended):
+  The smart-sync mode does the following:
+  1. First syncs NEW records from Neon → Local (preserves Neon changes)
+  2. Then syncs ALL records from Local → Neon (ensures Neon has everything)
+  This ensures no data loss and Local is the source of truth while preserving Neon additions.
         """
     )
     
     parser.add_argument(
         '--direction',
-        choices=['local-to-neon', 'neon-to-local', 'both'],
-        default='local-to-neon',
-        help='Sync direction (default: local-to-neon)'
+        choices=['smart-sync', 'local-to-neon', 'neon-to-local', 'both'],
+        default='smart-sync',
+        help='Sync direction (default: smart-sync)'
     )
     
     parser.add_argument(

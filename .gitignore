@@ -88,6 +88,9 @@ pip-delete-this-directory.txt
 docs/_build/
 site/
 
+# Documentation folder (keep in local only)
+docs/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

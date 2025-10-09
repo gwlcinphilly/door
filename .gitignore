@@ -109,6 +109,9 @@ check_environment.py
 # Tools folder (database sync and utilities - local only)
 tools/
 
+# Local development requirements (Render only needs requirements.txt)
+requirements_local.txt
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

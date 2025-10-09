@@ -94,6 +94,15 @@ docs/
 # Deployment folder (only for LOCAL and MIRROR, not needed on GitHub/Render)
 deployment/
 
+# Render configuration (configure in Render Dashboard instead)
+render.yaml
+
+# Start script (local development only)
+start.sh
+
+# Environment examples (templates in deployment/ folder)
+env_example.txt
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

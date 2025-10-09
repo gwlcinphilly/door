@@ -91,6 +91,9 @@ site/
 # Documentation folder (keep in local only)
 docs/
 
+# Deployment folder (only for LOCAL and MIRROR, not needed on GitHub/Render)
+deployment/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

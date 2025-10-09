@@ -13,7 +13,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from .database import get_db, USE_NEON
+from .database import get_db
 from . import models
 from .config import is_render
 

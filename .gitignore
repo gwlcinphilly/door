@@ -106,6 +106,9 @@ env_example.txt
 # Utility scripts (local use only, not needed for deployment)
 check_environment.py
 
+# Tools folder (database sync and utilities - local only)
+tools/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

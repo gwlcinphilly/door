@@ -103,6 +103,9 @@ start.sh
 # Environment examples (templates in deployment/ folder)
 env_example.txt
 
+# Utility scripts (local use only, not needed for deployment)
+check_environment.py
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

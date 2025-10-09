@@ -257,11 +257,11 @@ class SystemConfig:
             'environment_name': self._config.get('name'),
             'description': self._config.get('description'),
             'config': self._config,
-            'detection_info': {
+            'detection_methods': {
                 'hostname': hostname,
                 'render_env_var': bool(os.getenv('RENDER')),
                 'use_neon': os.getenv('USE_NEON', 'False'),
-                'neon_host': bool(os.getenv('NEON_HOST')),
+                'neon_database': bool(os.getenv('NEON_HOST')),
                 'port': int(os.getenv('PORT', '8000')),
                 'main_file': sys.argv[0] if sys.argv else 'Unknown',
                 'working_directory': os.getcwd(),

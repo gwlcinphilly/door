@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  door-mirror:
+    container_name: door-mirror
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: door-fastapi:latest
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.mirror
+    restart: unless-stopped
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+    networks:
+      - door-network
+    depends_on:
+      - postgres-mirror
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.door.environment=staging"
+      - "com.door.version=2.0.0"
+
+  postgres-mirror:
+    container_name: postgres-mirror
+    image: postgres:16
+    environment:
+      POSTGRES_DB: bdoor_postgres
+      POSTGRES_USER: bdoor_user
+      POSTGRES_PASSWORD: bdoor_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_mirror_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - door-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdoor_user -d bdoor_postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.door.service=postgres"
+      - "com.door.environment=mirror"
+
+volumes:
+  postgres_mirror_data:
+    driver: local
+
+networks:
+  door-network:
+    driver: bridge

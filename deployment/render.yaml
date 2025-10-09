@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: door-fastapi-app
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python main_render.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: USE_NEON
+        value: true
+      - key: NEON_HOST
+        value: your-neon-host-here
+      - key: NEON_PORT
+        value: 5432
+      - key: NEON_DATABASE_NAME
+        value: your-database-name
+      - key: NEON_USER
+        value: your-neon-username
+      - key: NEON_PASSWORD
+        value: your-neon-password
+      - key: SECRET_KEY
+        value: your-secret-key-here
+      - key: ADMIN_PASSWORD
+        value: your-admin-password
+    healthCheckPath: /health
+    autoDeploy: true

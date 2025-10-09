@@ -1,0 +1,27 @@
+# Local development requirements
+# Include all production requirements
+-r requirements.txt
+
+# Development and testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+
+# Code formatting and linting
+black>=23.11.0
+flake8>=6.1.0
+
+# Additional development dependencies
+httpx>=0.25.2
+lxml>=4.9.3
+
+# Optional: For enhanced source detection
+asyncpg>=0.29.0
+
+# Optional: For Redis caching (if needed later)
+redis>=5.0.1
+
+# Optional: For background tasks
+celery>=5.3.4
+
+# Optional: For monitoring and logging
+structlog>=23.2.0

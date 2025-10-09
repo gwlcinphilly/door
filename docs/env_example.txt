@@ -1,0 +1,36 @@
+# Environment Configuration Example
+# Copy appropriate values based on your environment
+
+# Database Configuration
+# Set to 'true' to use Neon database, 'false' for local PostgreSQL
+USE_NEON=false
+
+# Local PostgreSQL Configuration (when USE_NEON=false)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=bdoor_postgres
+DB_USER=bdoor_user
+DB_PASSWORD=bdoor_password
+
+# Neon Database Configuration (when USE_NEON=true)
+# Get these values from your Neon dashboard: https://console.neon.tech
+NEON_HOST=your-project.region.aws.neon.tech
+NEON_PORT=5432
+NEON_DATABASE_NAME=your-database-name
+NEON_USER=your-neon-username
+NEON_PASSWORD=your-secure-neon-password
+
+# Authentication (REQUIRED for Render deployment)
+SECRET_KEY=your-randomly-generated-secret-key-min-32-chars
+ADMIN_PASSWORD=your-strong-admin-password
+
+# Render Deployment Configuration
+# These are automatically set by Render, no need to configure manually
+# PORT=10000  # Auto-set by Render
+# RENDER=true # Auto-set by Render
+
+# Security Notes:
+# - NEVER commit real passwords to git
+# - Use strong, unique passwords
+# - Generate SECRET_KEY with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+# - Keep this file as reference only, use .env for actual values

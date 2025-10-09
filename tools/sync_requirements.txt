@@ -1,0 +1,2 @@
+# Database Sync Script Requirements
+psycopg2-binary>=2.9.5

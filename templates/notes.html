@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Notes - Door{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-journal-text"></i> Notes Management</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+        <i class="bi bi-plus-circle"></i> Add Note
+    </button>
+</div>
+
+<!-- Notes Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Your Notes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="notesTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Tag</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notes %}
+                    <tr>
+                        <td>
+                            <strong>{{ note.title[:50] }}{% if note.title|length > 50 %}...{% endif %}</strong>
+                        </td>
+                        <td>
+                            {% if note.category %}
+                                <span class="badge bg-info">{{ note.category.name }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No category</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if note.tag %}
+                                <span class="badge bg-warning">{{ note.tag.name }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No tag</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ note.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewNote({{ note.id }})">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="editNote({{ note.id }})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote({{ note.id }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addNoteForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="6"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category_id" class="form-label">Category</label>
+                                <select class="form-select" id="category_id" name="category_id">
+                                    <option value="">Select category</option>
+                                    <option value="1">General</option>
+                                    <option value="2">Work</option>
+                                    <option value="3">Personal</option>
+                                    <option value="4">Ideas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tag_id" class="form-label">Tag</label>
+                                <select class="form-select" id="tag_id" name="tag_id">
+                                    <option value="">Select tag</option>
+                                    <option value="1">Important</option>
+                                    <option value="2">Todo</option>
+                                    <option value="3">Reference</option>
+                                    <option value="4">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Note Modal -->
+<div class="modal fade" id="viewNoteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Note Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewNoteContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Note Modal -->
+<div class="modal fade" id="editNoteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editNoteForm">
+                <input type="hidden" id="edit_note_id" name="id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="edit_title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_content" class="form-label">Content</label>
+                        <textarea class="form-control" id="edit_content" name="content" rows="6"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_category_id" class="form-label">Category</label>
+                                <select class="form-select" id="edit_category_id" name="category_id">
+                                    <option value="">Select category</option>
+                                    <option value="1">General</option>
+                                    <option value="2">Work</option>
+                                    <option value="3">Personal</option>
+                                    <option value="4">Ideas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_tag_id" class="form-label">Tag</label>
+                                <select class="form-select" id="edit_tag_id" name="tag_id">
+                                    <option value="">Select tag</option>
+                                    <option value="1">Important</option>
+                                    <option value="2">Todo</option>
+                                    <option value="3">Reference</option>
+                                    <option value="4">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add Note Form
+document.getElementById('addNoteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Convert empty strings to null for optional fields
+    if (data.category_id === '') data.category_id = null;
+    if (data.tag_id === '') data.tag_id = null;
+    
+    try {
+        const response = await fetch('/notes/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.detail);
+        }
+    } catch (error) {
+        alert('Error adding note: ' + error.message);
+    }
+});
+
+// View Note
+async function viewNote(noteId) {
+    try {
+        const response = await fetch(`/notes/api/notes/${noteId}`);
+        const note = await response.json();
+        
+        const content = `
+            <h6>Title</h6>
+            <p><strong>${note.title}</strong></p>
+            
+            <h6>Content</h6>
+            <div class="border p-3 rounded bg-light">
+                ${note.content ? note.content.replace(/\n/g, '<br>') : 'No content'}
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Category</h6>
+                    <p>${note.category ? note.category.name : 'No category'}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Tag</h6>
+                    <p>${note.tag ? note.tag.name : 'No tag'}</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Created</h6>
+                    <p>${new Date(note.date).toLocaleString()}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Last Updated</h6>
+                    <p>${new Date(note.timestamp).toLocaleString()}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('viewNoteContent').innerHTML = content;
+        new bootstrap.Modal(document.getElementById('viewNoteModal')).show();
+    } catch (error) {
+        alert('Error loading note: ' + error.message);
+    }
+}
+
+// Edit Note
+async function editNote(noteId) {
+    try {
+        const response = await fetch(`/notes/api/notes/${noteId}`);
+        const note = await response.json();
+        
+        document.getElementById('edit_note_id').value = note.id;
+        document.getElementById('edit_title').value = note.title;
+        document.getElementById('edit_content').value = note.content || '';
+        document.getElementById('edit_category_id').value = note.category_id || '';
+        document.getElementById('edit_tag_id').value = note.tag_id || '';
+        
+        new bootstrap.Modal(document.getElementById('editNoteModal')).show();
+    } catch (error) {
+        alert('Error loading note: ' + error.message);
+    }
+}
+
+// Update Note Form
+document.getElementById('editNoteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const noteId = document.getElementById('edit_note_id').value;
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    delete data.id; // Remove the ID from the data
+    
+    // Convert empty strings to null for optional fields
+    if (data.category_id === '') data.category_id = null;
+    if (data.tag_id === '') data.tag_id = null;
+    
+    try {
+        const response = await fetch(`/notes/api/notes/${noteId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.detail);
+        }
+    } catch (error) {
+        alert('Error updating note: ' + error.message);
+    }
+});
+
+// Delete Note
+async function deleteNote(noteId) {
+    if (confirm('Are you sure you want to delete this note?')) {
+        try {
+            const response = await fetch(`/notes/api/notes/${noteId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                const error = await response.json();
+                alert('Error: ' + error.detail);
+            }
+        } catch (error) {
+            alert('Error deleting note: ' + error.message);
+        }
+    }
+}
+</script>
+{% endblock %}

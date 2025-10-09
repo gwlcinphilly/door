@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Environment & System Info - Door{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="bi bi-server"></i> Environment & System Information</h2>
+        <p class="text-muted">Current system configuration and environment details</p>
+    </div>
+</div>
+
+<!-- Local Development Notice -->
+{% if not is_render %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> Local Development Environment</h5>
+            <p class="mb-0">You are currently running in local development mode. This page shows basic environment information, but most production features are disabled for development purposes.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <!-- Environment Status -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Environment Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Environment:</strong>
+                    <span class="badge {% if is_render %}bg-success{% else %}bg-info{% endif %} ms-2">
+                        {{ env_info.config.name }}
+                    </span>
+                </div>
+                <p><strong>Description:</strong> {{ env_info.config.description }}</p>
+                <p><strong>Database:</strong> {{ env_info.config.database }}</p>
+                <p><strong>Port:</strong> {{ env_info.config.port }}</p>
+                <p><strong>Authentication:</strong> 
+                    <span class="badge {% if env_info.config.authentication %}bg-success{% else %}bg-warning{% endif %}">
+                        {% if env_info.config.authentication %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </p>
+                <p><strong>Debug Mode:</strong>
+                    <span class="badge {% if env_info.config.debug %}bg-warning{% else %}bg-success{% endif %}">
+                        {% if env_info.config.debug %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detection Methods -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-search"></i> Detection Methods
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Render Environment Variable:</strong>
+                    <span class="badge {% if env_info.detection_methods.render_env_var %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                        {{ env_info.detection_methods.render_env_var }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Neon Database Config:</strong>
+                    <span class="badge {% if env_info.detection_methods.neon_database %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                        {{ env_info.detection_methods.neon_database }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Port:</strong> {{ env_info.detection_methods.port }}
+                </div>
+                <div class="mb-2">
+                    <strong>Main File:</strong> 
+                    <code>{{ env_info.detection_methods.main_file.split('/')[-1] if env_info.detection_methods.main_file else 'Unknown' }}</code>
+                </div>
+                <div class="mb-2">
+                    <strong>Working Directory:</strong>
+                    <small class="text-muted d-block">{{ env_info.detection_methods.working_directory }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Available Features -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Available Features
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for feature, status in env_info.config.features.items() %}
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <span>{{ feature.replace('_', ' ').title() }}:</span>
+                    <span class="badge {% if status %}bg-success{% else %}bg-secondary{% endif %}">
+                        {% if status %}Available{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Restrictions -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-exclamation"></i> Restrictions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for restriction, value in env_info.config.restrictions.items() %}
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <span>{{ restriction.replace('_', ' ').title() }}:</span>
+                    <span class="badge {% if value == 'Unlimited' or value == 'Full' or value == 'Enabled' %}bg-success{% elif value == 'Limited' or value == 'Restricted' %}bg-warning{% else %}bg-danger{% endif %}">
+                        {{ value }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Environment Toggle (for development) -->
+{% if is_local %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools"></i> Development Mode
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">You are currently running in <strong>Local Development Mode</strong>.</p>
+                <div class="alert alert-info">
+                    <strong>Development Features Enabled:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>No authentication required</li>
+                        <li>Full debug output</li>
+                        <li>Unlimited file access</li>
+                        <li>Hot reload enabled</li>
+                        <li>Local database connection</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Production Mode Info -->
+{% if is_render %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-check"></i> Production Mode
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">You are currently running in <strong>Production Mode on Render</strong>.</p>
+                <div class="alert alert-success">
+                    <strong>Production Features Enabled:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Authentication required</li>
+                        <li>SSL/HTTPS enabled</li>
+                        <li>Production monitoring</li>
+                        <li>Neon database connection</li>
+                        <li>Secure session management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh environment info every 30 seconds
+    setInterval(function() {
+        fetch('/environment/api/environment')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Environment info updated:', data);
+            })
+            .catch(error => {
+                console.log('Error updating environment info:', error);
+            });
+    }, 30000);
+});
+</script>
+{% endblock %}

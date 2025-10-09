@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Door{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white p-5 rounded mb-4">
+            <h1 class="display-4">
+                <i class="bi bi-door-open"></i> Welcome to Door
+            </h1>
+            <p class="lead">Your modern stock and information management system</p>
+            <hr class="my-4">
+            <p>Manage your stocks, track information, and organize your notes all in one place.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title" id="stocks-count">-</h4>
+                        <p class="card-text">Stocks</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-graph-up fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title" id="information-count">-</h4>
+                        <p class="card-text">Information</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-newspaper fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title" id="notes-count">-</h4>
+                        <p class="card-text">Notes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-journal-text fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title" id="transactions-count">-</h4>
+                        <p class="card-text">Transactions</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-arrow-left-right fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/stocks/" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Add New Stock
+                    </a>
+                    <a href="/information/" class="btn btn-outline-info">
+                        <i class="bi bi-link-45deg"></i> Add Information
+                    </a>
+                    <a href="/notes/" class="btn btn-outline-warning">
+                        <i class="bi bi-pencil"></i> Create Note
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity">
+                    <p class="text-muted">Loading recent activity...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Database Status -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-database"></i> System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Database:</strong> <span id="db-status" class="badge bg-secondary">Checking...</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>API:</strong> <span id="api-status" class="badge bg-secondary">Checking...</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load dashboard data
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    checkSystemStatus();
+});
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+        
+        document.getElementById('stocks-count').textContent = stats.stocks || 0;
+        document.getElementById('information-count').textContent = stats.information || 0;
+        document.getElementById('notes-count').textContent = stats.notes || 0;
+        document.getElementById('transactions-count').textContent = stats.transactions || 0;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function checkSystemStatus() {
+    try {
+        // Check API status
+        const apiResponse = await fetch('/api/health');
+        const apiStatus = document.getElementById('api-status');
+        if (apiResponse.ok) {
+            apiStatus.textContent = 'Online';
+            apiStatus.className = 'badge bg-success';
+        } else {
+            apiStatus.textContent = 'Error';
+            apiStatus.className = 'badge bg-danger';
+        }
+        
+        // Check database status
+        const dbResponse = await fetch('/api/database/status');
+        const dbStatus = document.getElementById('db-status');
+        if (dbResponse.ok) {
+            dbStatus.textContent = 'Connected';
+            dbStatus.className = 'badge bg-success';
+        } else {
+            dbStatus.textContent = 'Disconnected';
+            dbStatus.className = 'badge bg-danger';
+        }
+    } catch (error) {
+        console.error('Error checking system status:', error);
+        document.getElementById('api-status').textContent = 'Error';
+        document.getElementById('api-status').className = 'badge bg-danger';
+        document.getElementById('db-status').textContent = 'Error';
+        document.getElementById('db-status').className = 'badge bg-danger';
+    }
+}
+</script>
+{% endblock %}

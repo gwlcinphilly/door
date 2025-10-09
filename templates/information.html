@@ -1,0 +1,894 @@
+{% extends "base.html" %}
+
+{% block title %}Information - Door{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="card-title">Information Entries</h2>
+                <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addInfoModal">
+                    <i class="bi bi-plus-circle"></i> Add Information
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h4>Overview</h4>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h6 class="text-muted">Total Entries</h6>
+                                    <h3>{{ total_count }}</h3>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted">Current Filter</h6>
+                                    <p class="mb-0">
+                                        <strong>Days:</strong> 
+                                        {% if selected_days == 'all' %}
+                                            All time
+                                        {% elif selected_days == '1' %}
+                                            Last 1 day
+                                        {% else %}
+                                            Last {{ selected_days }} days
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Source:</strong> 
+                                        {% if selected_source %}
+                                            {% for source in info_sources %}
+                                                {% if source.short == selected_source %}
+                                                    {{ source.name }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            All Sources
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Tag Filter:</strong> 
+                                        {% if no_tag_filter %}
+                                            <span class="text-warning">No Tag Only</span>
+                                        {% elif check_tag_filter %}
+                                            <span class="text-info">Check Tag Only</span>
+                                        {% else %}
+                                            All Tags
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted">Filtered Results</h6>
+                                    <h3>{{ information|length }}</h3>
+                                    <small class="text-muted">{{ filtered_count }} of {{ total_count }} total</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted">Date Range</h6>
+                                    <p class="mb-0">
+                                        {% if oldest_entry_date and newest_entry_date %}
+                                            {{ oldest_entry_date.strftime('%Y-%m-%d') }} to {{ newest_entry_date.strftime('%Y-%m-%d') }}
+                                        {% else %}
+                                            No entries
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Include the information table template -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>Information Entries</h3>
+                            <div class="d-flex align-items-center">
+                                <!-- Form-based Source and Days Filter -->
+                                <form method="get" action="" class="me-3 d-flex align-items-center">
+                                    <!-- Days Filter -->
+                                    <select name="days" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                                        <option value="1" {% if selected_days == '1' or not selected_days %}selected{% endif %}>Last 1 day</option>
+                                        <option value="30" {% if selected_days == '30' %}selected{% endif %}>Last 30 days</option>
+                                        <option value="7" {% if selected_days == '7' %}selected{% endif %}>Last 7 days</option>
+                                        <option value="14" {% if selected_days == '14' %}selected{% endif %}>Last 14 days</option>
+                                        <option value="90" {% if selected_days == '90' %}selected{% endif %}>Last 90 days</option>
+                                        <option value="all" {% if selected_days == 'all' %}selected{% endif %}>All time</option>
+                                    </select>
+                                    
+                                    <!-- Source Filter -->
+                                    <select name="source" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="">All Sources</option>
+                                        {% for source in info_sources %}
+                                            <option value="{{ source.short }}" {% if selected_source == source.short %}selected{% endif %}>
+                                                {{ source.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                
+                                <!-- Action buttons -->
+                                <button type="button" class="btn btn-warning me-2" id="updateAllBtn">
+                                    <i class="bi bi-arrow-repeat"></i> Update All Documents
+                                </button>
+                                <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addInfoSourceModal">
+                                    <i class="bi bi-plus-circle"></i> Add Info Source
+                                </button>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInfoTagModal">
+                                    <i class="bi bi-plus-circle"></i> Add Info Tag
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Second row with Tag checkboxes -->
+                        <div class="d-flex justify-content-end align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="check_tag" value="1" id="checkTagFilter" {% if check_tag_filter %}checked{% endif %}>
+                                    <label class="form-check-label" for="checkTagFilter">Check</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="no_tag" value="1" id="noTagFilter" {% if no_tag_filter %}checked{% endif %}>
+                                    <label class="form-check-label" for="noTagFilter">No Tag</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="informationTable" class="table table-striped table-bordered display nowrap" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Title</th>
+                                        <th>Tags</th>
+                                        <th>Actions</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for info in information %}
+                                    <tr data-source="{{ info.source.short if info.source else '' }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if info.source %}
+                                                    {% if info.source.short == 'youtube' %}
+                                                        <i class="bi bi-youtube text-danger me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% elif info.source.short == 'podcast' %}
+                                                        <i class="bi bi-mic-fill text-primary me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% elif info.source.short == 'twitter' %}
+                                                        <i class="bi bi-twitter text-info me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% elif info.source.short == 'news' %}
+                                                        <i class="bi bi-newspaper text-success me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% elif info.source.short == 'short' %}
+                                                        <i class="bi bi-camera-video text-warning me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-globe text-secondary me-2" data-bs-toggle="tooltip" title="{{ info.source.name }}"></i>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <i class="bi bi-globe text-secondary me-2" data-bs-toggle="tooltip" title="Unknown Source"></i>
+                                                {% endif %}
+                                                {{ info.date.strftime('%Y-%m-%d') }}
+                                            </div>
+                                        </td>
+                                        <td class="text-wrap">{{ info.title|default(info.url) }}</td>
+                                        <td>
+                                            {% if info.tags %}
+                                                {% for tag in info.tags %}
+                                                    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">No tags</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button type="button" 
+                                            class="btn btn-sm btn-primary edit-info-btn"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editInfoModal"
+                                            data-id="{{ info.id }}"
+                                            data-url="{{ info.url }}"
+                                            data-source-id="{{ info.source.id if info.source else '' }}"
+                                            data-source-short="{{ info.source.short if info.source else '' }}"
+                                            data-tags="{% for tag in info.tags %}{{ tag.tag }}{% if not loop.last %},{% endif %}{% endfor %}"
+                                            data-title="{{ info.title|default('')|e }}"
+                                            data-content="{{ info.content|default('')|e }}">
+                                            <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                        </td>
+                                        <td>
+                                            {% set comment_count = info.comments|length %}
+                                            {% if comment_count > 0 %}
+                                                <button type="button" class="btn btn-sm btn-outline-info comment-view-btn" 
+                                                        data-bs-toggle="modal" data-bs-target="#viewCommentsModal"
+                                                        data-info-id="{{ info.id }}">
+                                                    <i class="bi bi-chat-dots"></i> {{ comment_count }}
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-success comment-add-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#addCommentModal"
+                                                    data-info-id="{{ info.id }}">
+                                                <i class="bi bi-plus-circle"></i> Comment
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not information %}
+                                    <!-- Empty table - DataTables will handle the "no data" message -->
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Information Modal -->
+<div class="modal fade" id="addInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addInfoForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">URL *</label>
+                        <input type="url" class="form-control" id="url" name="url" required>
+                        <div class="form-text">Enter a URL for this information</div>
+                    </div>
+                    
+                    
+                    <!-- Source Selection -->
+                    <div class="mb-3">
+                        <label for="add_source" class="form-label">Source</label>
+                        <select class="form-select" id="add_source" name="source_id">
+                            {% for source in info_sources %}
+                                {% if source.short == "youtube" %}
+                                    <option value="{{ source.id }}" selected>{{ source.short }} - {{ source.name }}</option>
+                                {% else %}
+                                    <option value="{{ source.id }}">{{ source.short }} - {{ source.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Default is YouTube if not specified</div>
+                    </div>
+                    
+                    <!-- Tags Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Tags</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-info" id="add_tag_count">0 selected</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAddTagSelection()">
+                                <i class="bi bi-x-circle"></i> Clear All
+                            </button>
+                        </div>
+                        
+                        <!-- Selected Tags Display -->
+                        <div id="add_selected_tags" class="mb-2 p-2 border rounded bg-light" style="min-height: 40px;">
+                            <div class="text-muted text-center" id="add_no_tags_msg">No tags selected</div>
+                        </div>
+                        
+                        <!-- Tag Search -->
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="add_tag_search" placeholder="Search tags...">
+                            <button type="button" class="btn btn-outline-secondary" id="add_clear_search">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Available Tags -->
+                        <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted" id="add_available_count">{{ info_tags|length }} tags available</small>
+                            </div>
+                            <div id="add_available_tags">
+                                {% if info_tags %}
+                                    {% for tag in info_tags %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary me-1 mb-1 add-tag-btn" 
+                                                data-tag-id="{{ tag.id }}" data-tag-code="{{ tag.tag }}" data-tag-name="{{ tag.name }}">
+                                            {{ tag.name }}
+                                        </button>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-muted text-center">No tags available</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Information</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Information Modal -->
+<div class="modal fade" id="viewInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Information Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewInfoContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Information Modal -->
+<div class="modal fade" id="editInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editInfoForm">
+                <input type="hidden" id="edit_info_id" name="id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_url" class="form-label">URL *</label>
+                        <input type="url" class="form-control" id="edit_url" name="url" required>
+                    </div>
+                    
+                    <!-- Source Selection -->
+                    <div class="mb-3">
+                        <label for="edit_source" class="form-label">Source *</label>
+                        <select class="form-select" id="edit_source" name="source_id" required>
+                            <option value="">Select a source...</option>
+                            {% for source in info_sources %}
+                                <option value="{{ source.id }}">{{ source.short }} - {{ source.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the source type for this information</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="edit_title" name="title">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_content" class="form-label">Content</label>
+                        <textarea class="form-control" id="edit_content" name="content" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-tags"></i> Tags
+                            <span class="badge bg-secondary ms-2" id="edit_tag_count">0 selected</span>
+                        </label>
+                        
+                        <!-- Selected Tags Display -->
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Selected Tags:</label>
+                            <div id="edit_selected_tags" class="border rounded p-2 bg-light" style="min-height: 40px;">
+                                <div class="text-muted small" id="edit_no_tags_message">No tags selected</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tag Search and Selection -->
+                        <div class="mb-2">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="edit_tag_search" placeholder="Search tags..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="edit_clear_search">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Available Tags -->
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Click tags to select/deselect
+                                </small>
+                                <small class="text-muted" id="edit_available_count">{{ info_tags|length }} available</small>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1" id="edit_available_tags">
+                                {% for tag in info_tags %}
+                                    <button type="button" class="btn btn-outline-secondary btn-sm tag-select-btn" 
+                                            data-tag-id="{{ tag.id }}" 
+                                            data-tag-name="{{ tag.name }}"
+                                            data-tag-code="{{ tag.tag }}"
+                                            title="{{ tag.description or tag.name }}">
+                                        <i class="bi bi-tag"></i> {{ tag.name }}
+                                        <small class="text-muted">({{ tag.tag }})</small>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                            <div id="edit_no_matching_tags" class="text-muted text-center py-3" style="display: none;">
+                                <i class="bi bi-search"></i> No tags match your search
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="edit_selected_tag_ids" name="tag_ids" value="">
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-danger me-2" id="deleteInfoBtn">
+                            <i class="bi bi-trash"></i> Delete Entry
+                        </button>
+                        <button type="button" class="btn btn-warning" id="checkAgainBtn">
+                            <i class="bi bi-arrow-clockwise"></i> Check Again
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Information</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit InfoSource Modal -->
+<div class="modal fade" id="addInfoSourceModal" tabindex="-1" aria-labelledby="addInfoSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addInfoSourceForm">
+                <input type="hidden" name="id" id="info_source_id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addInfoSourceModalLabel">Add/Edit Info Source</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="info_source_short" class="form-label">Short Code</label>
+                        <input type="text" class="form-control" id="info_source_short" name="short" required maxlength="20">
+                        <div class="form-text">Unique code (e.g., 'youtube', 'web'). Max 20 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="info_source_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="info_source_name" name="name" required maxlength="100">
+                        <div class="form-text">Display name (e.g., 'YouTube', 'Web'). Max 100 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="info_source_description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="info_source_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Existing Sources ({{ info_sources|length }} total)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            {% for source in info_sources %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 edit-source-btn" 
+                                        data-source-id="{{ source.id }}" 
+                                        data-source-short="{{ source.short }}" 
+                                        data-source-name="{{ source.name }}" 
+                                        data-source-description="{{ source.description }}">
+                                    {{ source.short }}: {{ source.name }}
+                                </button>
+                            {% endfor %}
+                            {% if not info_sources %}
+                                <p class="text-muted">No sources available</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">Click on any source above to edit it, or fill out the form to add a new source.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="clearSourceForm">Clear Form</button>
+                    <button type="submit" class="btn btn-primary" id="submitSourceBtn">Add Source</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit InfoTag Modal -->
+<div class="modal fade" id="addInfoTagModal" tabindex="-1" aria-labelledby="addInfoTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addInfoTagForm">
+                <input type="hidden" name="id" id="info_tag_id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addInfoTagModalLabel">Add Info Tag</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="info_tag_tag" class="form-label">Tag Code</label>
+                        <input type="text" class="form-control" id="info_tag_tag" name="tag" required maxlength="20">
+                        <div class="form-text">Unique code (e.g., 'news', 'stocks'). Max 20 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="info_tag_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="info_tag_name" name="name" required maxlength="100">
+                        <div class="form-text">Display name (e.g., 'News', 'Stocks'). Max 100 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="info_tag_description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="info_tag_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Existing Tags ({{ info_tags|length }} total)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            {% for tag in info_tags %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 edit-tag-btn" 
+                                        data-tag-id="{{ tag.id }}" 
+                                        data-tag-code="{{ tag.tag }}" 
+                                        data-tag-name="{{ tag.name }}" 
+                                        data-tag-description="{{ tag.description }}">
+                                    {{ tag.tag }}: {{ tag.name }}
+                                </button>
+                            {% endfor %}
+                            {% if not info_tags %}
+                                <p class="text-muted">No tags available</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">Click on any tag above to edit it, or fill out the form to add a new tag.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="clearTagForm">Clear Form</button>
+                    <button type="submit" class="btn btn-primary" id="submitTagBtn">Add Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Comment Modal -->
+<div class="modal fade" id="addCommentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCommentForm">
+                <input type="hidden" id="comment_info_id" name="info_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="comment_content" class="form-label">Comment *</label>
+                        <textarea class="form-control" id="comment_content" name="content" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Comments Modal -->
+<div class="modal fade" id="viewCommentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comments</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="commentsContent">
+                <!-- Comments will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/information.js"></script>
+<script>
+// Add Information Form
+document.getElementById('addInfoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Set default source to YouTube (ID: 1) if not specified
+    if (!data.source_id) {
+        data.source_id = 1; // YouTube source ID
+    }
+    
+    // Add selected tag IDs
+    const selectedTags = Array.from(document.querySelectorAll('#add_selected_tags .badge')).map(badge => 
+        badge.getAttribute('data-tag-id')
+    ).filter(id => id);
+    data.tag_ids = selectedTags.join(',');
+    
+    try {
+        const response = await fetch('/information/api/information', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.detail);
+        }
+    } catch (error) {
+        alert('Error adding information: ' + error.message);
+    }
+});
+
+
+// Add Information Modal Tag Selection Functions
+let addSelectedTags = new Set();
+
+function initializeAddTagSelection() {
+    // Handle tag button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-tag-btn')) {
+            const tagId = e.target.getAttribute('data-tag-id');
+            const tagName = e.target.getAttribute('data-tag-name');
+            addTagToAddSelection(tagId, tagName, e.target);
+        }
+    });
+    
+    // Handle search input
+    const searchInput = document.getElementById('add_tag_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterAddTags(this.value);
+        });
+    }
+    
+    // Handle clear search button
+    const clearSearchBtn = document.getElementById('add_clear_search');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            document.getElementById('add_tag_search').value = '';
+            filterAddTags('');
+        });
+    }
+}
+
+function addTagToAddSelection(tagId, tagName, buttonElement) {
+    if (addSelectedTags.has(tagId)) {
+        return; // Already selected
+    }
+    
+    addSelectedTags.add(tagId);
+    
+    // Update UI
+    const selectedTagsContainer = document.getElementById('add_selected_tags');
+    const noTagsMsg = document.getElementById('add_no_tags_msg');
+    
+    if (noTagsMsg) {
+        noTagsMsg.style.display = 'none';
+    }
+    
+    // Add selected tag badge
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-primary me-1 mb-1';
+    badge.setAttribute('data-tag-id', tagId);
+    badge.innerHTML = `${tagName} <i class="bi bi-x" onclick="removeTagFromAddSelection('${tagId}', this)"></i>`;
+    selectedTagsContainer.appendChild(badge);
+    
+    // Update button state
+    buttonElement.classList.remove('btn-outline-secondary');
+    buttonElement.classList.add('btn-secondary');
+    buttonElement.disabled = true;
+    
+    updateAddTagCount();
+}
+
+function removeTagFromAddSelection(tagId, removeIcon) {
+    addSelectedTags.delete(tagId);
+    
+    // Remove badge
+    const badge = removeIcon.parentElement;
+    badge.remove();
+    
+    // Update button state
+    const button = document.querySelector(`.add-tag-btn[data-tag-id="${tagId}"]`);
+    if (button) {
+        button.classList.remove('btn-secondary');
+        button.classList.add('btn-outline-secondary');
+        button.disabled = false;
+    }
+    
+    // Show "no tags" message if no tags selected
+    const selectedTagsContainer = document.getElementById('add_selected_tags');
+    const noTagsMsg = document.getElementById('add_no_tags_msg');
+    if (selectedTagsContainer.children.length === 0 && noTagsMsg) {
+        noTagsMsg.style.display = 'block';
+    }
+    
+    updateAddTagCount();
+}
+
+function clearAddTagSelection() {
+    // Clear selected tags set
+    addSelectedTags.clear();
+    
+    // Clear UI
+    const selectedTagsContainer = document.getElementById('add_selected_tags');
+    const noTagsMsg = document.getElementById('add_no_tags_msg');
+    
+    selectedTagsContainer.innerHTML = '';
+    if (noTagsMsg) {
+        noTagsMsg.style.display = 'block';
+    }
+    
+    // Reset all tag buttons
+    document.querySelectorAll('.add-tag-btn').forEach(btn => {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline-secondary');
+        btn.disabled = false;
+    });
+    
+    updateAddTagCount();
+}
+
+function filterAddTags(searchTerm) {
+    const buttons = document.querySelectorAll('.add-tag-btn');
+    const availableCount = document.getElementById('add_available_count');
+    let visibleCount = 0;
+    
+    buttons.forEach(button => {
+        const tagName = button.getAttribute('data-tag-name').toLowerCase();
+        const matches = tagName.includes(searchTerm.toLowerCase());
+        
+        if (matches) {
+            button.style.display = 'inline-block';
+            visibleCount++;
+        } else {
+            button.style.display = 'none';
+        }
+    });
+    
+    if (availableCount) {
+        availableCount.textContent = `${visibleCount} tags available`;
+    }
+}
+
+function updateAddTagCount() {
+    const countBadge = document.getElementById('add_tag_count');
+    if (countBadge) {
+        countBadge.textContent = `${addSelectedTags.size} selected`;
+    }
+}
+
+// Initialize add tag selection when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAddTagSelection();
+});
+
+// Comment functionality
+// Handle comment add button clicks
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('comment-add-btn') || e.target.closest('.comment-add-btn')) {
+        const button = e.target.classList.contains('comment-add-btn') ? e.target : e.target.closest('.comment-add-btn');
+        const infoId = button.getAttribute('data-info-id');
+        document.getElementById('comment_info_id').value = infoId;
+    }
+});
+
+// Handle comment view button clicks
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('comment-view-btn') || e.target.closest('.comment-view-btn')) {
+        const button = e.target.classList.contains('comment-view-btn') ? e.target : e.target.closest('.comment-view-btn');
+        const infoId = button.getAttribute('data-info-id');
+        loadComments(infoId);
+    }
+});
+
+// Add Comment Form submission
+document.getElementById('addCommentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const infoId = document.getElementById('comment_info_id').value;
+    const content = document.getElementById('comment_content').value;
+    
+    try {
+        const response = await fetch(`/information/api/information/${infoId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        });
+        
+        if (response.ok) {
+            // Clear form and close modal
+            document.getElementById('addCommentForm').reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addCommentModal'));
+            if (modal) {
+                modal.hide();
+            }
+            // Reload page to show updated comment count
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error adding comment: ' + error.detail);
+        }
+    } catch (error) {
+        alert('Error adding comment: ' + error.message);
+    }
+});
+
+// Load comments for viewing
+async function loadComments(infoId) {
+    try {
+        const response = await fetch(`/information/api/information/${infoId}/comments`);
+        if (response.ok) {
+            const comments = await response.json();
+            const commentsContent = document.getElementById('commentsContent');
+            
+            if (comments.length === 0) {
+                commentsContent.innerHTML = '<p class="text-muted">No comments yet.</p>';
+            } else {
+                let html = '';
+                comments.forEach(comment => {
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <p class="card-text">${comment.content}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> ${new Date(comment.date).toLocaleDateString()}
+                                    ${comment.updated_at ? `<i class="bi bi-clock ms-2"></i> ${new Date(comment.updated_at).toLocaleString()}` : ''}
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                });
+                commentsContent.innerHTML = html;
+            }
+        } else {
+            document.getElementById('commentsContent').innerHTML = '<p class="text-danger">Error loading comments.</p>';
+        }
+    } catch (error) {
+        document.getElementById('commentsContent').innerHTML = '<p class="text-danger">Error loading comments: ' + error.message + '</p>';
+    }
+}
+
+// Update Information Form
+document.getElementById('editInfoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const infoId = document.getElementById('edit_info_id').value;
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    delete data.id; // Remove the ID from the data
+    
+    try {
+        const response = await fetch(`/information/api/information/${infoId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.detail);
+        }
+    } catch (error) {
+        alert('Error updating information: ' + error.message);
+    }
+});
+
+</script>
+{% endblock %}
